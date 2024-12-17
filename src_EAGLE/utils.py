@@ -1,25 +1,25 @@
 import collections
+import io
 import os
 from os.path import join
-import io
 
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 import numpy as np
 import torch.multiprocessing
 import torch.nn as nn
 import torch.nn.functional as F
+import wandb
 import wget
 from PIL import Image
+from pytorch_lightning.loggers import WandbLogger
 from scipy.optimize import linear_sum_assignment
-from torch._six import string_classes
 from torch.utils.data import DataLoader
 from torch.utils.data._utils.collate import np_str_obj_array_pattern, default_collate_err_msg_format
+from torch.utils.tensorboard.summary import hparams
 from torchmetrics import Metric
 from torchvision import models
 from torchvision import transforms as T
-from torch.utils.tensorboard.summary import hparams
-from pytorch_lightning.loggers import WandbLogger
-import wandb
 
 
 def prep_for_plot(img, rescale=True, resize=None):
@@ -42,7 +42,7 @@ def add_plot(writer, name, step):
     image = T.ToTensor()(image)
     # writer.add_image(name, image, step)
     # writer.log_image(key=name, images=image)
-    writer({name: [wandb.Image(image)]}, step = step)
+    writer({name: [wandb.Image(image)]}, step=step)
     plt.clf()
     plt.close()
 
@@ -272,16 +272,16 @@ class UnsupervisedMetrics(Metric):
         iou = tp / (tp + fp + fn)
         prc = tp / (tp + fn)
         opc = torch.sum(tp) / torch.sum(self.histogram)
-        
+
         if training:
             metric_dict = {self.prefix + "mIoU": iou[~torch.isnan(iou)].mean().item(),
-                        self.prefix + "Accuracy": opc.item()}
+                           self.prefix + "Accuracy": opc.item()}
+            print(metric_dict)
             return {k: 100 * v for k, v in metric_dict.items()}
-    
-        else:    
+        else:
             metric_dict = {self.prefix + "mIoU": iou[~torch.isnan(iou)].mean().item(),
-                    self.prefix + "Accuracy": opc.item(),
-                    "assignments": (self.assignments[1]).tolist()}
+                           self.prefix + "Accuracy": opc.item(),
+                           "assignments": (self.assignments[1]).tolist()}
             return {k: 100 * v for k, v in metric_dict.items()}
 
         # metric_dict = {self.prefix + "mIoU": iou[~torch.isnan(iou)].mean().item(),
@@ -321,7 +321,7 @@ def flexible_collate(batch):
         return torch.tensor(batch, dtype=torch.float64)
     elif isinstance(elem, int):
         return torch.tensor(batch)
-    elif isinstance(elem, string_classes):
+    elif isinstance(elem, str):
         return batch
     elif isinstance(elem, collections.abc.Mapping):
         return {key: flexible_collate([d[key] for d in batch]) for key in elem}
@@ -337,3 +337,25 @@ def flexible_collate(batch):
         return [flexible_collate(samples) for samples in transposed]
 
     raise TypeError(default_collate_err_msg_format.format(elem_type))
+
+
+def label_to_color_image(label_image, num_classes):
+    map = []
+
+    for item in range(num_classes):
+        np.random.seed(item)
+        r = np.random.randint(0, 255)
+        g = np.random.randint(0, 255)
+        b = np.random.randint(0, 255)
+
+        map.append((r, g, b))
+
+    color_image = np.ndarray(shape=(label_image.shape[0], label_image.shape[1], 3))
+
+    for idx, item in enumerate(map):
+        target_positions = label_image == idx
+        color_image[..., 0] += target_positions * item[0]
+        color_image[..., 1] += target_positions * item[1]
+        color_image[..., 2] += target_positions * item[2]
+
+    return color_image

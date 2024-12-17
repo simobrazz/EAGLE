@@ -11,10 +11,7 @@ from torch.utils.data import Dataset
 from torchvision.datasets.cityscapes import Cityscapes
 from torchvision.transforms.functional import to_pil_image
 from tqdm import tqdm
-import torch.nn.functional as F
-import json
-from torchvision import transforms as pth_transforms
-import cv2
+
 
 def bit_get(val, idx):
     """Gets the bit value.
@@ -491,7 +488,6 @@ class ContrastiveSegDataset(Dataset):
             transform=transform,
             target_transform=target_transform, **extra_args)
 
-
     def __len__(self):
         return len(self.dataset)
 
@@ -501,7 +497,6 @@ class ContrastiveSegDataset(Dataset):
 
     def __getitem__(self, ind):
         pack = self.dataset[ind]
-
 
         seed = np.random.randint(2147483647)  # make a seed with numpy generator
 
@@ -523,12 +518,10 @@ class ContrastiveSegDataset(Dataset):
             "label_pos": extra_trans(ind, pack[1]),
         }
 
-
         if self.mask:
             ret["mask"] = pack[2]
-            
+
         if self.aug_photometric_transform is not None:
             ret['img_pos_aug'] = self.aug_photometric_transform(ret['img_pos'])
 
         return ret
-    

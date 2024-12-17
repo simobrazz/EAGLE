@@ -4,9 +4,8 @@ from data import ContrastiveSegDataset
 import hydra
 import torch
 from omegaconf import DictConfig, OmegaConf
-from pytorch_lightning.utilities.seed import seed_everything
 from torch.utils.data import DataLoader
-from torchvision.transforms.functional import five_crop, _get_image_size, crop
+from torchvision.transforms.functional import five_crop, crop, get_image_size
 from tqdm import tqdm
 from torch.utils.data import Dataset
 
@@ -38,7 +37,7 @@ def _random_crops(img, size, seed, n):
     if len(size) != 2:
         raise ValueError("Please provide only two dimensions (h, w) for size.")
 
-    image_width, image_height = _get_image_size(img)
+    image_width, image_height = get_image_size(img)
     crop_height, crop_width = size
     if crop_width > image_width or crop_height > image_height:
         msg = "Requested crop size {} is bigger than input size {}"
@@ -102,9 +101,6 @@ class RandomCropComputer(Dataset):
             T.ToTensor(),
             ToTargetTensor(),
             cfg=cfg,
-            num_neighbors=cfg.num_neighbors,
-            pos_labels=False,
-            pos_images=False,
             mask=False,
             aug_geometric_transform=None,
             aug_photometric_transform=None,
@@ -127,20 +123,22 @@ class RandomCropComputer(Dataset):
         return len(self.dataset)
 
 
-@hydra.main(config_path="configs", config_name="train_config.yml")
+@hydra.main(config_path="configs", config_name="crop_config.yml")
 def my_app(cfg: DictConfig) -> None:
     print(OmegaConf.to_yaml(cfg))
-    seed_everything(seed=0, workers=True)
 
-    # dataset_names = ["cityscapes", "cocostuff27"]
-    # img_sets = ["train", "val"]
-    # crop_types = ["five","random"]
-    # crop_ratios = [.5, .7]
+    # from pytorch_lightning.utilities import seed_everything
+    # seed_everything(seed=0, workers=True)
 
-    dataset_names = ["cityscapes"]
+    dataset_names = ["cocostuff27"]
     img_sets = ["train", "val"]
     crop_types = ["five"]
     crop_ratios = [.5]
+
+    # dataset_names = ["cityscapes"]
+    # img_sets = ["train", "val"]
+    # crop_types = ["five"]
+    # crop_ratios = [.5]
 
     for crop_ratio in crop_ratios:
         for crop_type in crop_types:

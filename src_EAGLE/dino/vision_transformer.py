@@ -22,6 +22,7 @@ import torch
 import torch.nn as nn
 from dino.utils import trunc_normal_
 
+
 def drop_path(x, drop_prob: float = 0., training: bool = False):
     if drop_prob == 0. or not training:
         return x
@@ -36,6 +37,7 @@ def drop_path(x, drop_prob: float = 0., training: bool = False):
 class DropPath(nn.Module):
     """Drop paths (Stochastic Depth) per sample  (when applied in main path of residual blocks).
     """
+
     def __init__(self, drop_prob=None):
         super(DropPath, self).__init__()
         self.drop_prob = drop_prob
@@ -87,8 +89,7 @@ class Attention(nn.Module):
         x = (attn @ v).transpose(1, 2).reshape(B, N, C)
         x = self.proj(x)
         x = self.proj_drop(x)
-        return x,attn, qkv
-        
+        return x, attn, qkv
 
 
 class Block(nn.Module):
@@ -103,20 +104,21 @@ class Block(nn.Module):
         mlp_hidden_dim = int(dim * mlp_ratio)
         self.mlp = Mlp(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
 
-    def forward(self, x, return_attention=False, return_qkv = False):
+    def forward(self, x, return_attention=False, return_qkv=False):
         y, attn, qkv = self.attn(self.norm1(x))
         if return_attention:
             return attn
         x = x + self.drop_path(y)
         x = x + self.drop_path(self.mlp(self.norm2(x)))
         if return_qkv:
-            return x,attn, qkv
+            return x, attn, qkv
         return x
 
 
 class PatchEmbed(nn.Module):
     """ Image to Patch Embedding
     """
+
     def __init__(self, img_size=224, patch_size=16, in_chans=3, embed_dim=768):
         super().__init__()
         num_patches = (img_size // patch_size) * (img_size // patch_size)
@@ -134,6 +136,7 @@ class PatchEmbed(nn.Module):
 
 class VisionTransformer(nn.Module):
     """ Vision Transformer """
+
     def __init__(self, img_size=[224], patch_size=16, in_chans=3, num_classes=0, embed_dim=768, depth=12,
                  num_heads=12, mlp_ratio=4., qkv_bias=False, qk_scale=None, drop_rate=0., attn_drop_rate=0.,
                  drop_path_rate=0., norm_layer=nn.LayerNorm, **kwargs):
@@ -229,7 +232,7 @@ class VisionTransformer(nn.Module):
         attns = []
         qkvs = []
         for i, blk in enumerate(self.blocks):
-            x,attn,qkv = blk(x, return_qkv=True)
+            x, attn, qkv = blk(x, return_qkv=True)
             # if len(self.blocks) - i <= n:
             feat.append(self.norm(x))
             qkvs.append(qkv)
@@ -278,7 +281,8 @@ def vit_base(patch_size=16, **kwargs):
 
 
 class DINOHead(nn.Module):
-    def __init__(self, in_dim, out_dim, use_bn=False, norm_last_layer=True, nlayers=3, hidden_dim=2048, bottleneck_dim=256):
+    def __init__(self, in_dim, out_dim, use_bn=False, norm_last_layer=True, nlayers=3, hidden_dim=2048,
+                 bottleneck_dim=256):
         super().__init__()
         nlayers = max(nlayers, 1)
         if nlayers == 1:

@@ -2,23 +2,26 @@ output_root: '../'
 pytorch_data_dir: 'pytorch_data_dir'
 experiment_name: "cocostuff27"
 res: 320
-batch_size: 8
-num_workers: 8
+batch_size: 6
+num_workers: 2
 run_picie: False
 run_crf: True
 run_prediction: True
 dark_mode: True
 use_ddp: False
 
-dino_patch_size: 8
+dino_patch_size: 2
 dino_feat_type: "feat"
 projection_type: "nonlinear"
 model_type: "vit_small"
 pretrained_weights: ~
 dataset_name: "cocostuff27"
 
+export_predictions_and_labels: true
+export_predictions_and_labels_path: "eagle_examples"
+
 model_paths:
- - '../checkpoints/EAGLE_COCO_ViTS8.ckpt'
+ - 'EAGLE_COCO_ViTS8.ckpt'
 #  - '../checkpoints/EAGLE_Cityscapes_ViTB8.ckpt'
 
 hydra:
